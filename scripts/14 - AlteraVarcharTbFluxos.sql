@@ -1,0 +1,2 @@
+ALTER TABLE edm.tb_fluxos
+ALTER COLUMN tp_evento TYPE VARCHAR(50);

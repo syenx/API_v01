@@ -1,0 +1,22 @@
+{
+  "feature": [
+    "FULL_AGENT"
+  ],
+  "log": [
+    {
+      "directory": "/tmp/appd/dotnet",
+      "level": "DEBUG",
+      "channel": "protobuf"
+    },
+    {
+      "root_directory": "/tmp/appd/dotnet",
+      "level": "DEBUG"
+    }
+  ],
+  "instrumentors": {
+    "disable": [
+      "RabbitMQModelInstrumentor",
+      "RabbitMQBasicConsumerInstrumentor"
+    ]
+  }
+}

@@ -1,0 +1,1 @@
+GRANT DELETE ON edm.tb_fluxos TO ledm;

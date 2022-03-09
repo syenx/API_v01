@@ -1,0 +1,246 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    field.cattle.io/creatorId: u-vrndj4wrzt
+  creationTimestamp: null
+  generation: 1
+  labels:
+    cattle.io/creator: norman
+    workload.user.cattle.io/workloadselector: deployment-edm-infohub-consumer-bpo-luz-service
+  name: bpo-luz-service
+  selfLink: /apis/apps/v1/namespaces/edm-infohub-consumer/deployments/bpo-luz-service
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      workload.user.cattle.io/workloadselector: deployment-edm-infohub-consumer-bpo-luz-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        cattle.io/timestamp: "2020-04-20T16:05:40Z"
+        field.cattle.io/ports: '[null]'
+      creationTimestamp: null
+      labels:
+        workload.user.cattle.io/workloadselector: deployment-edm-infohub-consumer-bpo-luz-service
+    spec:
+      containers:
+      - env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Homologation
+        - name: AWS__Region
+          value: sa-east-1
+        - name: RabbitMQ__QueueConfiguration__AutoAck
+          value: "false"
+        - name: RabbitMQ__QueueConfiguration__Durable
+          value: "true"
+        - name: RabbitMQ__QueueConfiguration__Exchange
+          value: obr.infohub.message.out
+        - name: RabbitMQ__QueueConfiguration__QueueName
+          value: obr_infohub_out_bpo
+        - name: RabbitMQ__QueueConfiguration__RoutingKey
+          value: inoa_integration
+        - name: RabbitMQ__PrecoQueue__AutoAck
+          value: "false"
+        - name: RabbitMQ__PrecoQueue__Durable
+          value: "false"
+        - name: RabbitMQ__PrecoQueue__Exchange
+          value: obr.infohub.message.out
+        - name: RabbitMQ__PrecoQueue__QueueName
+          value: obr_infohub_integration
+        - name: RabbitMQ__PrecoQueue__RoutingKey
+          value: legacy_integration
+        - name: RabbitMQ__DadosCaracteristicosQueue__AutoAck
+          value: "false"
+        - name: RabbitMQ__DadosCaracteristicosQueue__Durable
+          value: "false"
+        - name: RabbitMQ__DadosCaracteristicosQueue__Exchange
+          value: obr.infohub.message.out
+        - name: RabbitMQ__DadosCaracteristicosQueue__QueueName
+          value: obr_infohub_dados_caracteristicos
+        - name: RabbitMQ__DadosCaracteristicosQueue__RoutingKey
+          value: legacy_integration
+        - name: RabbitMQ__AssinaturasQueue__AutoAck
+          value: "false"
+        - name: RabbitMQ__AssinaturasQueue__Durable
+          value: "true"
+        - name: RabbitMQ__AssinaturasQueue__Exchange
+          value: obr.infohub.message.out
+        - name: RabbitMQ__AssinaturasQueue__QueueName
+          value: obr_infohub_assinaturas
+        - name: RabbitMQ__AssinaturasQueue__RoutingKey
+          value: legacy_integration
+        - name: RabbitMQ__PuDeEventosQueue__AutoAck
+          value: "false"
+        - name: RabbitMQ__PuDeEventosQueue__Durable
+          value: "true"
+        - name: RabbitMQ__PuDeEventosQueue__Exchange
+          value: obr.infohub.message.out
+        - name: RabbitMQ__PuDeEventosQueue__QueueName
+          value: obr_infohub_pu_de_eventos
+        - name: RabbitMQ__PuDeEventosQueue__RoutingKey
+          value: legacy_integration
+        - name: RabbitMQ__ConnectionConfiguration__Hostname
+          value: rabbitmq-edm-uat.pactual.net
+        - name: RabbitMQ__ConnectionConfiguration__Password
+          value: radmin
+        - name: RabbitMQ__ConnectionConfiguration__Port
+          value: "25672"
+        - name: RabbitMQ__ConnectionConfiguration__UserName
+          value: radmin
+        - name: RabbitMQ__DeadLetterConfiguration__QueueName
+          value: obr_infohub_cadastro-deadLetter
+        - name: RabbitMQ__DeadLetterConfiguration__Durable
+          value: "true"
+        - name: LuzSettings__URL
+          value: https://www.solucoesluz.com/bpo_homol/
+        - name: LuzSettings__Token
+          value: Token  b74d69f331732cf375a819fb29854de2f40da988
+        - name: Filtro
+          value: CRI,CRA,DEB
+        - name: ConnectionStrings__Base
+          value: Server=edm-bpo-rf-uat1;Database=edm_bpo_rf;Port=5432;User Id=ledm;Password=Secret;Timeout=60;CommandTimeout=120;
+        - name: SecretName
+          value: ledm
+        - name: HangfireUrl
+          value: http://hangfire.uat.eks-edm.container.btgpactual.net/
+        - name: HangfireCron
+          value: 0 0 10 ? * MON-FRI
+        - name: CodigoPraca
+          value: BPRI
+        - name: CodigoFeeder
+          value: "17"
+        - name: InfohubAPIUrl
+          value: http://infohub.uat.eks-edm.container.btgpactual.net/
+        - name: SQSQueuesConfig__papel__QueueName
+          value: fixedIncome_RSTPapel
+        - name: SQSQueuesConfig__papel__QueueURL
+          value: https://sqs.us-east-1.amazonaws.com/845648937706/fixedIncome_RSTPapel
+        - name: SQSQueuesConfig__papel__MaxNumberOfMessages
+          value: "10"
+        - name: SQSQueuesConfig__papel__WaitTimeSeconds
+          value: "5"
+        - name: SQSQueuesConfig__evento__QueueName
+          value: fixedIncome_RSTEvento
+        - name: SQSQueuesConfig__evento__QueueURL
+          value: https://sqs.us-east-1.amazonaws.com/845648937706/fixedIncome_RSTEvento
+        - name: SQSQueuesConfig__evento__MaxNumberOfMessages
+          value: "10"
+        - name: SQSQueuesConfig__evento__WaitTimeSeconds
+          value: "5"
+        - name: SecureGateway__AuthenticationKey
+          value: IHInoaConsum_uat[NB]DS243saHOAS23asjh2AL234709SHD37a9Dd69AHKJASNKDasdf
+        - name: SecureGateway__ServiceUrl
+          value: http://webfarm-adm-uat.pactual.net:8808/Utils/Gateway/SecureGateway/SecGtwNoCertHost.svc
+        - name:  CalendarService
+          value: http://webfarm-sharedservices-uat.pactual.net/EDM/BdsCalendar/CalendarServiceHost/CalendarServiceHost.svc
+        image: ImageName
+        imagePullPolicy: Always
+        name: bpo-luz-service
+        resources: 
+          requests:
+            memory: "300Mi"
+            cpu: "100m"
+          limits:
+            memory: "300Mi"
+            cpu: "100m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {}
+          privileged: false
+          procMount: Default
+          readOnlyRootFilesystem: false
+          runAsNonRoot: false
+        stdin: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        tty: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bpohpa
+  namespace: edm-infohub-consumer
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bpo-luz-service
+  minReplicas: 1
+  maxReplicas: 4
+  metrics: 
+  - type: Resource
+    resource:
+      name: memory 
+      target:
+        type: Utilization 
+        averageUtilization: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    field.cattle.io/targetWorkloadIds: '["deployment:edm-infohub-consumer:bpo-luz-service"]'
+  creationTimestamp: null
+  labels:
+    cattle.io/creator: norman
+  name: ingress-bpo-luz
+  ownerReferences:
+  - apiVersion: v1beta1/extensions
+    controller: true
+    kind: Ingress
+    name: edminfohub
+    uid: f4da3500-8321-11ea-8e64-0211cab92318
+  selfLink: /api/v1/namespaces/edm-infohub-consumer/services/ingress-bpo-luz
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    workloadID_ingress-bpo-luz: "true"
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, OPTIONS, DELETE"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,user,x-po-screen-lock"
+  creationTimestamp: null
+  generation: 1
+  labels:
+    cattle.io/creator: norman
+  name: edminfohub
+  namespace: edm-infohub-consumer
+  selfLink: /apis/extensions/v1beta1/namespaces/edm-infohub-consumer/ingresses/edminfohub
+spec:
+  rules:
+  - host: infohub.uat.eks-edm.container.btgpactual.net
+    http:
+      paths:
+      - backend:
+          serviceName: ingress-bpo-luz
+          servicePort: 80
+status:
+  loadBalancer: {}

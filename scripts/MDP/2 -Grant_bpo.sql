@@ -1,0 +1,3 @@
+GRANT SELECT,INSERT,UPDATE ON GLOBAL.EDM.TB_ASSINATURA_BPO TO LSVC_EDMSERVICES;
+
+select * from edm.tb_assinatura_bpo where cd_sna = 'GUAR12'

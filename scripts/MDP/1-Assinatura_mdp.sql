@@ -1,0 +1,118 @@
+--CRIACAO DA TABELA DE ASSINATURA BPO
+IF NOT EXISTS(SELECT * FROM sys.objects 
+WHERE object_id = OBJECT_ID(N'[edm].[TB_ASSINATURA_BPO]') AND type in (N'U'))
+begin
+	CREATE TABLE [edm].[TB_ASSINATURA_BPO] (
+		PK_ASSINATURA_BPO INT IDENTITY(1,1) PRIMARY KEY,
+		COD_ATIVO INT UNIQUE,
+		CD_SNA VARCHAR(255),
+		ES_ASSINADO bit, 
+		IMPACTA_PRECO bit, 
+		IMPACTA_CADASTRO bit, 
+		IMPACTA_PU_EVENTO bit,
+		IMPACTA_PU_HISTORICO bit
+	);
+end
+
+GRANT SELECT,INSERT,UPDATE ON GLOBAL.EDM.TB_ASSINATURA_BPO TO LSVC_EDMSERVICES;
+
+--ALTERACAO DA PROCEDURE DE CALCULO DAS 04 DA MANHA
+--IF OBJECT_ID('[EDM].[PR_CONS_ATIVOS_RF_CALCULO_PRICING]', 'P') IS NULL
+--	EXEC('CREATE PROCEDURE [EDM].[PR_CONS_ATIVOS_RF_CALCULO_PRICING] AS')
+--GO  
+--ALTER PROCEDURE [EDM].[PR_CONS_ATIVOS_RF_CALCULO_PRICING] 
+--@DT_REFERENCIA DATETIME       
+--AS      
+--BEGIN
+----tabela temporaria para pegar papeis assinados bpo para retirar do calculo
+--IF OBJECT_ID('tempdb..#tmp_bpo') IS NOT NULL DROP TABLE #tmp_bpo
+--
+--select *
+--    into #tmp_bpo
+--    from EDM.TB_ASSINATURA_BPO b
+----alterar o FROM para tabela de assinatura BPO
+--  WHERE b.ES_ASSINADO = 1
+--    and b.IMPACTA_PRECO = 1;
+--
+----declare @DT_REFERENCIA DATETIME   = '2020-03-20'  
+-- SELECT RF.COD_ATIVO,         
+--  COALESCE(COD_CETIP_21, DESCRICAO_ATIVO) AS COD_CLEARING,      
+--  DATA_VENCIMENTO,         
+--  COD_GRUPO_CONTABIL      
+--       FROM ATIVOS_RF RF WITH (NOLOCK)    
+--    INNER JOIN ATIVOS AT WITH (NOLOCK)   
+--   ON RF.COD_ATIVO = AT.COD_ATIVO    
+--       LEFT JOIN DOMINIOEXCECAO DE WITH (NOLOCK)  
+--   ON DE.IDEXCECAO = RF.IDEXCECAO
+--     LEFT JOIN #tmp_bpo bpo WITH (NOLOCK)
+--  on bpo.cod_ativo = rf.cod_ativo 
+--       WHERE AT.COD_TIPO_ATIVO IN (5,6)    
+--       AND DATA_VENCIMENTO >= @DT_REFERENCIA        
+--       AND @DT_REFERENCIA >= DATA_EMISSAO     
+--       AND (DE.ID_TIPO_EXCECAO <> 722 OR  DE.ID_TIPO_EXCECAO IS NULL) -- 722 - Erro na Curva  
+--    --remove SNAs fake  
+--       AND RTRIM(LTRIM(COALESCE(RF.COD_CETIP_21, RF.DESCRICAO_ATIVO))) NOT LIKE '%PACT'   
+--    AND RTRIM(LTRIM(COALESCE(RF.COD_CETIP_21, RF.DESCRICAO_ATIVO))) NOT LIKE '%XX'  
+--  --prioriza o cálculo de emissoes BTG  
+--    and bpo.cod_ativo is null
+--    --retirando pepeis assinados pelo bpo
+--  ORDER BY RF.COD_CGE_EMISSOR ASC  
+--END;
+
+--ALTERACAO DA PROCEDURE DE CALCULO INTRADAY
+IF OBJECT_ID('[EDM].[PR_CONS_TB_CONTROLE_CADASTRO_ALVO]', 'P') IS NULL
+	EXEC('CREATE PROCEDURE [EDM].[PR_CONS_TB_CONTROLE_CADASTRO_ALVO] AS')
+GO  
+ALTER PROCEDURE [EDM].[PR_CONS_TB_CONTROLE_CADASTRO_ALVO]            
+AS          
+BEGIN               
+     
+ --tabela temporaria para pegar papeis assinados bpo para retirar do calculo
+IF OBJECT_ID('tempdb..#tmp_bpo_controle_cadastro') IS NOT NULL DROP TABLE #tmp_bpo_controle_cadastro
+
+select *
+    into #tmp_bpo_controle_cadastro
+    from EDM.TB_ASSINATURA_BPO b
+--alterar o FROM para tabela de assinatura BPO
+  WHERE b.ES_ASSINADO = 1 
+    and b.IMPACTA_PRECO = 1;
+
+SELECT
+   TOP (15 - (SELECT CASE WHEN COUNT(1) > 15 THEN 15  
+     ELSE COUNT(1)        
+    END        
+   FROM TB_RF_CONTROLE_RECALCULO TRCR WITH (NOLOCK)         
+   WHERE CD_STATUS = 'Processing'))        
+  MAX(ID_TB_RFON_CONTROLE_CADASTRO) ID_TB_RFON_CONTROLE_CADASTRO,        
+  -1 ID_CONTROLE_RECALCULO,        
+  TRCC.COD_ATIVO,        
+  MAX(TRCC.DT_EVENTO) DT_EVENTO,        
+  '' NM_LOGIN,        
+  '' NM_MAQUINA,        
+  RTRIM(LTRIM(COALESCE(ATRF.COD_CETIP_21, ATRF.DESCRICAO_ATIVO)))  AS COD_CETIP_21,      
+  ATRF.DATA_EMISSAO      
+ FROM EDM.TB_RFON_CONTROLE_CADASTRO  TRCC WITH (NOLOCK)        
+  LEFT JOIN ATIVOS_RF ATRF WITH (NOLOCK) ON ATRF.COD_ATIVO = TRCC.COD_ATIVO        
+  LEFT JOIN ATIVOS ATIV WITH (NOLOCK) ON ATIV.COD_ATIVO = TRCC.COD_ATIVO        
+  LEFT JOIN #tmp_bpo_controle_cadastro bpo WITH (NOLOCK) ON bpo.cod_ativo = TRCC.COD_ATIVO
+ WHERE NOT EXISTS (SELECT 1         
+   FROM TB_RF_CONTROLE_RECALCULO WITH (NOLOCK)         
+     WHERE CD_STATUS = 'Processing'        
+     AND COD_ATIVO = TRCC.COD_ATIVO)
+	 --retirando pepeis assinados pelo bpo
+	 AND bpo.cod_ativo is null        
+ GROUP BY         
+  TRCC.COD_ATIVO,        
+  ATRF.COD_CETIP_21,        
+  ATRF.DESCRICAO_ATIVO,        
+  ATIV.COD_TIPO_ATIVO,      
+  ATRF.DATA_EMISSAO      
+ HAVING        
+  MAX(TRCC.DT_EVENTO) > ISNULL((SELECT MAX(DT_INICIO) DT_INICIO        
+        FROM TB_RF_CONTROLE_RECALCULO WITH (NOLOCK)        
+        WHERE COD_ATIVO = TRCC.COD_ATIVO)        
+        , -1)        
+  AND ATIV.COD_TIPO_ATIVO IN (5,6)        
+  AND MAX(TRCC.DT_EVENTO) > DATEADD(MONTH, -1, GETDATE())--CONVERT(DATETIME, '2018-08-21 08:00:00.000', 102)      
+  ORDER BY ATRF.DATA_EMISSAO DESC, MAX(TRCC.DT_EVENTO) DESC          
+END;

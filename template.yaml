@@ -1,0 +1,74 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Fila SQS e Cron para o projeto BPO-Luz
+
+Parameters: 
+  Role:
+    Description: Role used in Lambda
+    Type: String
+    Default: role-lambda-infohub
+  Subnet1:
+    Description: One of the subnets you would like the ReplicationGroup to be created
+      in. In this example we only accept 3 subnets
+    Type: AWS::EC2::Subnet::Id
+  Subnet2:
+    Description: One of the subnets you would like the ReplicationGroup to be created
+      in. In this example we only accept 3 subnets
+    Type: AWS::EC2::Subnet::Id
+  SecurityGroupId:
+    Description: Role used in Lambda
+    Type: AWS::EC2::SecurityGroup::Id
+
+Resources:
+  BPOSQS:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: sendToBpo
+
+  BPOTrigger: 
+    Type: AWS::Events::Rule
+    Properties: 
+      Name: bpo-trigger
+      Description: "Em 5 minutos faz a chamada para o container do BPO fazer as requisicoes para a Luz"
+      ScheduleExpression: "cron(0/5 10,11,12,13,14,15,16,17,18,19,20,21,22,23,00 ? * 2-6 *)"
+      State: "ENABLED"
+      Targets: 
+        - Arn: !GetAtt TriggerBPOLambda.Arn
+          Id: "TargetFunctionV1"
+
+  PermissionForEventsToInvokeLambda: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: 
+        Ref: "TriggerBPOLambda"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "BPOTrigger"
+          - "Arn"
+
+  TriggerBPOLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: bpo-trigger
+      Code: ./lambda-trigger
+      Description: Faz chamada para metdodo bpo-luz para requerir dados pendentes
+      Environment:
+        Variables:
+          url: http://infohub.dev.edm.container.btgpactual.net/weatherforecast
+          user_agent: Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us)
+      Handler: app.lambda_handler
+      Role:
+        Fn::Sub: arn:aws:iam::${AWS::AccountId}:role/${Role}
+      Runtime: python3.6
+      VpcConfig:
+        SecurityGroupIds:
+        - Ref: SecurityGroupId
+        SubnetIds:
+        - Ref: Subnet1
+        - Ref: Subnet2
+      Timeout: 30
+      Tags:
+        - Key: project
+          Value: bpo-luz
+      ReservedConcurrentExecutions: 1
